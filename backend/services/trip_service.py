@@ -1,14 +1,14 @@
 """
-Business Logic Layer for KelanaAI Recommendation Engine.
-Berisi fungsi-fungsi bisnis murni untuk klasifikasi, kalkulasi, dan rekomendasi.
+backend/services/trip_service.py
+Layer: Business Logic Layer
+
+Modul ini bertanggung jawab atas seluruh aturan bisnis dan perhitungan
+rekomendasi perjalanan pada platform KelanaAI.
 """
-
-from typing import List
-
 
 def get_trip_category(budget: float) -> str:
     """
-    Menentukan kategori perjalanan berdasarkan total budget (dalam USD).
+    Menentukan kategori perjalanan berdasarkan total budget (USD).
     - budget < 1000          -> "Backpacker"
     - 1000 <= budget <= 3000 -> "Standard"
     - budget > 3000          -> "Luxury"
@@ -23,15 +23,16 @@ def get_trip_category(budget: float) -> str:
 
 def get_travel_season(month: str) -> str:
     """
-    Menentukan musim perjalanan berdasarkan nama bulan (case-insensitive & trim whitespace).
+    Menentukan musim perjalanan berdasarkan nama bulan (Case-Insensitive).
     - December -> "Peak Season"
     - June     -> "Holiday Season"
     - Lainnya  -> "Regular Season"
     """
-    normalized = month.strip().lower()
-    if normalized == "december":
+    normalized_month = month.strip().lower()
+    
+    if normalized_month == "december":
         return "Peak Season"
-    elif normalized == "june":
+    elif normalized_month == "june":
         return "Holiday Season"
     else:
         return "Regular Season"
@@ -39,54 +40,60 @@ def get_travel_season(month: str) -> str:
 
 def calculate_daily_budget(budget: float, days: int) -> float:
     """
-    Menghitung alokasi budget harian (budget / days).
-    Dilengkapi validasi defensif terhadap division by zero / angka non-positif.
+    Menghitung alokasi budget harian (budget dibagi days)
+    dengan pembulatan 2 angka di belakang koma.
     """
     if days <= 0:
         raise ValueError("Jumlah hari (days) harus lebih besar dari 0.")
-    if budget < 0:
-        raise ValueError("Budget tidak boleh bernilai negatif.")
-    
     return round(budget / days, 2)
 
 
-def get_recommendations(destination: str) -> List[str]:
+def get_recommendations(destination: str) -> list:
     """
-    Mengambil daftar rekomendasi tempat (List) berdasarkan nama destinasi.
+    Mengembalikan list rekomendasi tempat wisata berdasarkan destinasi populer.
+    Menyediakan fallback rekomendasi jika destinasi belum terdaftar di database.
     """
-    dest_key = destination.strip().lower()
-
-    # Database rekomendasi berbasis List
-    database = {
+    # Database lokal destinasi populer menggunakan dictionary & list
+    destinations_db = {
         "japan": [
             "Tokyo Tower",
             "Shibuya",
-            "Mount Fuji"
+            "Mount Fuji",
+            "Fushimi Inari Taisha",
+            "Dotonbori"
         ],
         "bali": [
+            "Pantai Kuta",
+            "Pura Tanah Lot",
             "Ubud Monkey Forest",
-            "Tanah Lot",
-            "Kuta Beach",
-            "Uluwatu Temple"
+            "Uluwatu Temple",
+            "Nusa Penida"
         ],
         "paris": [
             "Eiffel Tower",
             "Louvre Museum",
-            "Arc de Triomphe"
+            "Arc de Triomphe",
+            "Notre-Dame Cathedral",
+            "Champs-Élysées"
         ],
         "switzerland": [
             "Jungfraujoch",
-            "Matterhorn Zermatt",
-            "Lake Geneva"
+            "Lake Geneva",
+            "Matterhorn",
+            "Lucerne Chapel Bridge",
+            "Interlaken"
         ]
     }
-
-    # Fallback jika destinasi belum terdaftar
-    return database.get(
-        dest_key,
-        [
-            f"Pusat Kota {destination.title()}",
-            f"Objek Wisata Populer {destination.title()}",
-            f"Pusat Kuliner {destination.title()}"
+    
+    normalized_dest = destination.strip().lower()
+    
+    # Ambil list rekomendasi tempat sesuai input
+    if normalized_dest in destinations_db:
+        return destinations_db[normalized_dest]
+    else:
+        # Fallback rekomendasi generik
+        return [
+            f"Pusat Kota {destination.strip().title()}",
+            f"Museum Sejarah {destination.strip().title()}",
+            f"Landmark Ikonik {destination.strip().title()}"
         ]
-    )
