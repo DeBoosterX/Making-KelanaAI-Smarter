@@ -1,68 +1,80 @@
 """
-Presentation Layer for KelanaAI Recommendation Engine.
-Bertanggung jawab menangani input/output dari user dan menampilkan hasil.
+backend/main.py
+Layer: Presentation Layer
+
+Modul ini bertanggung jawab untuk interaksi dengan pengguna (CLI),
+validasi input dasar, memanggil business logic dari trip_service,
+serta memformat tampilan output KelanaAI.
 """
-
-import sys
-from pathlib import Path
-
-# Proteksi agar import services selalu bekerja baik dijalankan dari root maupun dari backend/
-CURRENT_DIR = Path(__file__).resolve().parent
-if str(CURRENT_DIR) not in sys.path:
-    sys.path.insert(0, str(CURRENT_DIR))
 
 from services.trip_service import (
     get_trip_category,
     get_travel_season,
     calculate_daily_budget,
-    get_recommendations,
+    get_recommendations
 )
 
 
 def main():
-    # 1. Menerima Input dari User
-    destination = input("Destination : ").strip()
-    days_raw = input("Days        : ").strip()
-    budget_raw = input("Budget      : ").strip()
-    month = input("Travel Month: ").strip()
+    print("==================================")
+    print("Selamat Datang di KelanaAI Planner")
+    print("==================================")
+    
+    # 1. Input Data dan Validasi
+    destination = input("Masukkan Destinasi (contoh: Japan, Bali, Paris): ").strip()
+    if not destination:
+        print("Error: Destinasi tidak boleh kosong!")
+        return
 
-    # 2. Validasi Tipe Data & Nilai Positif
     try:
-        days = int(days_raw)
-        budget = float(budget_raw)
+        days_input = input("Masukkan Jumlah Hari (Days): ").strip()
+        days = int(days_input)
+        if days <= 0:
+            print("Error: Jumlah hari harus lebih besar dari 0.")
+            return
     except ValueError:
-        print("\n[Error]: Days harus berupa angka bulat dan Budget harus berupa angka!")
+        print("Error: Input hari harus berupa bilangan bulat positif.")
         return
 
-    if days <= 0 or budget <= 0:
-        print("\n[Error]: Days dan Budget harus lebih besar dari 0!")
+    try:
+        budget_input = input("Masukkan Total Budget (USD): ").strip()
+        budget = float(budget_input)
+        if budget <= 0:
+            print("Error: Budget harus lebih besar dari 0.")
+            return
+    except ValueError:
+        print("Error: Input budget harus berupa angka.")
         return
 
-    # 3. Proses Data Melalui Business Logic
+    month = input("Masukkan Bulan Perjalanan (contoh: December, June): ").strip()
+    if not month:
+        print("Error: Bulan perjalanan tidak boleh kosong!")
+        return
+
+    # 2. Proses Data Menggunakan Business Logic (Services Layer)
     category = get_trip_category(budget)
     season = get_travel_season(month)
     daily_budget = calculate_daily_budget(budget, days)
-    places = get_recommendations(destination)
+    recommendations = get_recommendations(destination)
 
-    # Format angka (tampilkan integer jika bulat, contoh 1500 USD & 300 USD/Day)
-    formatted_budget = f"{int(budget)}" if budget.is_integer() else f"{budget:.2f}"
-    formatted_daily = f"{int(daily_budget)}" if daily_budget.is_integer() else f"{daily_budget:.2f}"
+    # Format angka budget untuk tampilan
+    budget_display = int(budget) if budget.is_integer() else f"{budget:.2f}"
 
-    # 4. Tampilkan Output Persis Sesuai Format Spesifikasi
+    # 3. Tampilkan Output Terformat
     print("\n==================================")
     print("KelanaAI")
     print("==================================")
-    print(f"Destination     : {destination.title()}")
-    print(f"Days            : {days}")
-    print(f"Budget          : {formatted_budget} USD")
-    print(f"Category        : {category}")
-    print(f"Daily Budget    : {formatted_daily} USD/Day")
-    print(f"Travel Month    : {month.title()}")
-    print(f"Season          : {season}")
+    print(f"{'Destination':<16}: {destination.title()}")
+    print(f"{'Days':<16}: {days}")
+    print(f"{'Budget':<16}: {budget_display} USD")
+    print(f"{'Category':<16}: {category}")
+    print(f"{'Daily Budget':<16}: {daily_budget:.2f} USD/Day")
+    print(f"{'Travel Month':<16}: {month.title()}")
+    print(f"{'Season':<16}: {season}")
     print("\nRecommended Places:")
-
-    # Iterasi List rekomendasi tempat menggunakan for-loop
-    for place in places:
+    
+    # Iterasi daftar rekomendasi menggunakan for-loop
+    for place in recommendations[:3]:
         print(f"- {place}")
 
 
